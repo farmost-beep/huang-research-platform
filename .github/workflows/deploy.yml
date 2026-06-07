@@ -7,12 +7,10 @@ on:
 
 env:
   NODE_VERSION: 20
-  PYTHON_VERSION: "3.11"
 
 jobs:
-  # ========== Frontend: Build & Deploy to GitHub Pages ==========
-  frontend:
-    name: Frontend → GitHub Pages
+  deploy-frontend:
+    name: Deploy Frontend → GitHub Pages
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -29,7 +27,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -42,8 +39,9 @@ jobs:
           API_URL: ${{ vars.API_URL || 'http://localhost:8000' }}
           BASE_URL: ${{ vars.BASE_URL || '/huang-research-platform/' }}
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
+      - name: List output
+        run: ls -la dist/ && ls -la dist/assets/
+        working-directory: frontend
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
@@ -53,51 +51,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
-  # ========== Backend: Docker Build & Push ==========
-  backend:
-    name: Backend → Docker Image
-    runs-on: ubuntu-latest
-    needs: [frontend]
-    if: github.ref == 'refs/heads/main'
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: ./backend
-          push: true
-          tags: |
-            ghcr.io/${{ github.repository }}/backend:latest
-            ghcr.io/${{ github.repository }}/backend:${{ github.sha }}
-
-  # ========== Deploy Backend to Server (SSH) ==========
-  deploy-server:
-    name: Deploy Backend (SSH)
-    runs-on: ubuntu-latest
-    needs: [backend]
-    if: github.ref == 'refs/heads/main' && vars.DEPLOY_SERVER == 'true'
-
-    steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          script: |
-            cd /opt/huang-research
-            docker compose pull
-            docker compose up -d --force-recreate
