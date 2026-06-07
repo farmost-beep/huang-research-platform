@@ -22,6 +22,7 @@ export interface Speech {
   event_name: string;
   word_count: number;
   source_url?: string;
+  raw_text?: string;
   topics?: { topic_name: string; relevance_score: number; keywords: string[] }[];
   sentiments?: { segment: string; label: string; confidence: number }[];
   narratives?: { name: string; category: string; significance: number }[];
@@ -72,7 +73,7 @@ export async function getDashboardOverview() {
   return data;
 }
 
-export async function getSpeeches(params?: { source_type?: string; year?: number; page?: number }) {
+export async function getSpeeches(params?: { source_type?: string; year?: number; page?: number; page_size?: number }) {
   const { data } = await api.get('/speeches/', { params });
   return data;
 }
