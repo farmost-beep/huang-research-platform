@@ -9,12 +9,16 @@ class YouTubeCollector:
     """采集黄仁勋在 YouTube 上的最新演讲视频"""
 
     SEED_VIDEOS = [
-        {"id": "DiGB5uAYKAg", "title": "GTC 2023 Keynote", "date": "2023-03-21", "event": "GTC 2023"},
-        {"id": "eAn_oiZwUXA", "title": "GTC 2021 Keynote", "date": "2021-04-12", "event": "GTC 2021"},
+        {"id": "7eVWVNwSMGs", "title": "GTC 2018 Keynote", "date": "2018-03-26", "event": "GTC 2018"},
         {"id": "Z2XlNfCtxwI", "title": "GTC 2019 Keynote", "date": "2019-03-18", "event": "GTC 2019"},
+        {"id": "zAYYhmCTNQA", "title": "GTC 2020 Keynote", "date": "2020-05-14", "event": "GTC 2020"},
+        {"id": "eAn_oiZwUXA", "title": "GTC 2021 Keynote", "date": "2021-04-12", "event": "GTC 2021"},
+        {"id": "39ubNuxnrK8", "title": "GTC 2022 Keynote", "date": "2022-03-22", "event": "GTC 2022"},
+        {"id": "DiGB5uAYKAg", "title": "GTC 2023 Keynote", "date": "2023-03-21", "event": "GTC 2023"},
+        {"id": "i-wpzS9ZsCs", "title": "Computex 2023 Keynote", "date": "2023-05-28", "event": "Computex 2023"},
         {"id": "Y2F8yisiS6E", "title": "GTC 2024 Keynote", "date": "2024-03-18", "event": "GTC 2024"},
-        {"id": "k82RwXqZHY8", "title": "CES 2025 Keynote", "date": "2025-01-06", "event": "CES 2025"},
         {"id": "pKXDVsWZmUU", "title": "Computex 2024 Keynote", "date": "2024-06-02", "event": "Computex 2024"},
+        {"id": "k82RwXqZHY8", "title": "CES 2025 Keynote", "date": "2025-01-06", "event": "CES 2025"},
         {"id": "TLzna9__DnI", "title": "Computex 2025 Keynote", "date": "2025-05-18", "event": "Computex 2025"},
     ]
 
@@ -31,21 +35,17 @@ class YouTubeCollector:
         return collected
 
     async def _collect_seed(self) -> int:
-        """种子列表转录采集"""
+        """种子列表转录采集（先检查已存在，跳过 YouTube API 限流）"""
         collected = 0
         from youtube_transcript_api import YouTubeTranscriptApi
         from database.connection import async_session
         from database.models import Speech
         from sqlalchemy import select
-        import uuid
+        import uuid, asyncio
 
         for video in self.SEED_VIDEOS:
             try:
-                transcript_list = YouTubeTranscriptApi.get_transcript(video["id"], languages=["en"])
-                raw_text = " ".join([item["text"] for item in transcript_list])
-                if len(raw_text) < 100:
-                    continue
-
+                # 先查数据库，已存在则跳过
                 async with async_session() as session:
                     existing = await session.execute(
                         select(Speech).where(Speech.source_url.contains(video["id"]))
@@ -54,6 +54,13 @@ class YouTubeCollector:
                         logger.info(f"  已存在: {video['title']}")
                         continue
 
+                await asyncio.sleep(1.5)  # 限流保护
+                transcript_list = YouTubeTranscriptApi.get_transcript(video["id"], languages=["en"])
+                raw_text = " ".join([item["text"] for item in transcript_list])
+                if len(raw_text) < 100:
+                    continue
+
+                async with async_session() as session:
                     speech = Speech(
                         id=str(uuid.uuid4()),
                         title=video["title"],
@@ -84,11 +91,13 @@ class YouTubeCollector:
             return 0
 
         collected = 0
-        import httpx
+        import httpx, asyncio
         from database.connection import async_session
         from database.models import Speech
         from sqlalchemy import select
         import uuid
+
+        proxies = {"http://": "http://127.0.0.1:7897", "https://": "http://127.0.0.1:7897"}
 
         for query in self.SEARCH_QUERIES:
             try:
@@ -102,7 +111,7 @@ class YouTubeCollector:
                     "publishedAfter": "2023-01-01T00:00:00Z",
                     "key": api_key,
                 }
-                async with httpx.AsyncClient(timeout=15) as client:
+                async with httpx.AsyncClient(timeout=15, proxies=proxies) as client:
                     resp = await client.get(url, params=params)
                     if resp.status_code != 200:
                         continue
@@ -112,6 +121,15 @@ class YouTubeCollector:
                         title = item["snippet"]["title"]
                         published = item["snippet"]["publishedAt"][:10]
 
+                        # 先检查是否已存在
+                        async with async_session() as session:
+                            exists = await session.execute(
+                                select(Speech).where(Speech.source_url.contains(vid))
+                            )
+                            if exists.scalar_one_or_none():
+                                continue
+
+                        await asyncio.sleep(1)
                         try:
                             from youtube_transcript_api import YouTubeTranscriptApi
                             tl = YouTubeTranscriptApi.get_transcript(vid, languages=["en"])
@@ -122,12 +140,6 @@ class YouTubeCollector:
                             continue
 
                         async with async_session() as session:
-                            exists = await session.execute(
-                                select(Speech).where(Speech.source_url.contains(vid))
-                            )
-                            if exists.scalar_one_or_none():
-                                continue
-
                             speech = Speech(
                                 id=str(uuid.uuid4()),
                                 title=title[:200],
