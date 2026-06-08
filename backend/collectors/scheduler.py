@@ -18,14 +18,14 @@ class SchedulerService:
         if self._running:
             return
 
-        # 采集任务
+        # 采集任务 — 启动后立即执行，随后按间隔运行
         self.scheduler.add_job(
             self.run_collection,
             "interval",
             hours=settings.collection_interval_hours,
             id="collect_speeches",
             replace_existing=True,
-            next_run_time=None,  # 不自动启动，等待手动触发
+            next_run_time=datetime.utcnow(),
         )
 
         # 分析任务
@@ -35,7 +35,7 @@ class SchedulerService:
             hours=settings.analysis_interval_hours,
             id="analyze_speeches",
             replace_existing=True,
-            next_run_time=None,
+            next_run_time=datetime.utcnow(),
         )
 
         # 快照生成
@@ -45,7 +45,7 @@ class SchedulerService:
             days=settings.snapshot_interval_days,
             id="create_snapshot",
             replace_existing=True,
-            next_run_time=None,
+            next_run_time=datetime.utcnow(),
         )
 
         self.scheduler.start()
