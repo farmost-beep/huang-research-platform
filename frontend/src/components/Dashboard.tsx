@@ -150,7 +150,7 @@ export default function Dashboard() {
                   <td className="py-2">
                     <Link to={`/speech/${s.id}`} className="text-emerald-400 hover:text-emerald-300">
                       {s.title}
-                    </a>
+                    </Link>
                   </td>
                   <td className="py-2 text-gray-400">{s.date?.slice(0, 10)}</td>
                   <td className="py-2">
@@ -175,7 +175,7 @@ export default function Dashboard() {
           </div>
           <Link to="/snapshots" className="text-sm text-emerald-400 hover:text-emerald-300">
             查看全部 →
-          </a>
+          </Link>
         </div>
       )}
     </div>

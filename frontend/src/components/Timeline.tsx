@@ -138,7 +138,7 @@ export default function Timeline() {
                           </a>
                         )}
                       </div>
-                    </a>
+                    </Link>
                   ))}
                 </div>
               </div>
