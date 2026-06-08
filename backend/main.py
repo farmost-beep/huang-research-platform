@@ -33,7 +33,12 @@ app = FastAPI(title="黄仁勋深度研究分析平台", version="0.1.0", lifesp
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "https://farmost-beep.github.io",
+        "https://192.tailf7710b.ts.net",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
