@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { getDashboardOverview, getKeywords, DashboardOverview, KeywordCloud } from '../utils/api';
 import KeywordCloudChart from './charts/KeywordCloudChart';
@@ -147,7 +148,7 @@ export default function Dashboard() {
               {overview?.recent_speeches?.map((s) => (
                 <tr key={s.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
                   <td className="py-2">
-                    <a href={`/speech/${s.id}`} className="text-emerald-400 hover:text-emerald-300">
+                    <Link to={`/speech/${s.id}`} className="text-emerald-400 hover:text-emerald-300">
                       {s.title}
                     </a>
                   </td>
@@ -172,7 +173,7 @@ export default function Dashboard() {
             <p className="text-emerald-400 font-medium">{overview.latest_snapshot.name}</p>
             <p className="text-xs text-gray-500">{overview.latest_snapshot.created_at?.slice(0, 16)}</p>
           </div>
-          <a href="/snapshots" className="text-sm text-emerald-400 hover:text-emerald-300">
+          <Link to="/snapshots" className="text-sm text-emerald-400 hover:text-emerald-300">
             查看全部 →
           </a>
         </div>

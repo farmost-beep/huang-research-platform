@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { getSpeech, Speech } from '../utils/api';
 
 export default function SpeechDetail() {
@@ -53,7 +53,7 @@ export default function SpeechDetail() {
     <div className="space-y-6">
       {/* 头部 */}
       <div>
-        <a href="/timeline" className="text-sm text-gray-500 hover:text-gray-300 mb-2 block">← 返回时间线</a>
+        <Link to="/timeline" className="text-sm text-gray-500 hover:text-gray-300 mb-2 block">← 返回时间线</Link>
         <h2 className="text-2xl font-bold text-white">{speech.title}</h2>
         <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
           <span>{speech.date?.slice(0, 10)}</span>

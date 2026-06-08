@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { getSpeeches, getLatestSnapshot, Speech, Snapshot } from '../utils/api';
 
@@ -99,9 +100,9 @@ export default function Timeline() {
 
                 <div className="ml-8 mt-6 space-y-3">
                   {items.map((speech) => (
-                    <a
+                    <Link
                       key={speech.id}
-                      href={`/speech/${speech.id}`}
+                      to={`/speech/${speech.id}`}
                       className="stat-card block ml-4 hover:border-emerald-500/30"
                     >
                       <div className="flex items-start justify-between">
