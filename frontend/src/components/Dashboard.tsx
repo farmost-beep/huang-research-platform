@@ -7,12 +7,17 @@ export default function Dashboard() {
   const [overview, setOverview] = useState<DashboardOverview | null>(null);
   const [keywords, setKeywords] = useState<KeywordCloud[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([getDashboardOverview(), getKeywords()])
       .then(([ov, kw]) => {
         setOverview(ov);
         setKeywords(kw);
+        setError(null);
+      })
+      .catch((e) => {
+        setError(e?.response?.data?.detail || e?.message || '无法连接后端服务');
       })
       .finally(() => setLoading(false));
   }, []);
@@ -21,6 +26,21 @@ export default function Dashboard() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-gray-400 animate-pulse">加载中...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 space-y-4">
+        <div className="text-red-400 text-lg">⚠️ 数据加载失败</div>
+        <div className="text-gray-500 text-sm">{error}</div>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-sm text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+        >
+          重试
+        </button>
       </div>
     );
   }
